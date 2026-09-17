@@ -1,0 +1,533 @@
+# ПОЛНЫЙ ПРОМПТ ДЛЯ ГЕНЕРАЦИИ САЙТА NEBULA DIGITAL
+
+## Контекст проекта
+
+Вы — профессиональный AI-ассистент по генерации кода. Ваша задача — создать ультра-современный, футуристический веб-сайт для цифровой студии "NEBULA DIGITAL", которая создаёт сайты и интегрирует инновационные решения для компаний.
+
+## Требования к дизайну
+
+### Визуальный стиль
+- **Эстетика**: Cyberpunk, Sci-Fi, Immersive 3D, WebGL, Spatial Design
+- **Атмосфера**: Тёмная, загадочная, бесконечное пространство, объёмное освещение, неоновые акценты
+- **Настроение**: Нереалистичное, футуристичное, технологичное, иммерсивное
+
+### Цветовая палитра
+```
+Основной фон: #030303 (глубокий чёрный с шумом)
+Неоновый циан: #00F0FF (основной акцент)
+Электрический фиолетовый: #BD00FF (вторичный акцент)
+Кислотно-зелёный: #39FF14 (дополнительный)
+Белый: #FFFFFF (текст заголовков)
+Светло-серый: #E0E0E0 (основной текст)
+```
+
+### Типографика
+- **Заголовки**: Clash Display или Monument Extended (широкий гротеск, 700 weight)
+- **Основной текст**: Space Mono или JetBrains Mono (моноширинный, терминальный стиль)
+- **Размеры**: 
+  - Hero: clamp(3rem, 10vw, 8rem)
+  - Section titles: clamp(2rem, 5vw, 4rem)
+  - Body: 0.875rem - 1rem
+
+## Техническая реализация
+
+### Стек технологий
+```html
+<!-- Библиотеки (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+```
+
+### Структура файлов
+```
+nebula_digital/
+├── index.html
+├── css/
+│   ├── main.css
+│   ├── 3d-scene.css
+│   └── animations.css
+├── js/
+│   ├── main.js
+│   ├── 3d-scene.js
+│   ├── animations.js
+│   ├── navigation.js
+│   ├── cursor.js
+│   └── utils.js
+└── assets/
+    ├── models/
+    ├── textures/
+    └── audio/
+```
+
+## Детальное описание компонентов
+
+### 1. Preloader (Экран загрузки)
+
+**Визуал**:
+- Чёрный фон (#030303)
+- Крупный текст "NEBULA DIGITAL" с пульсирующим свечением
+- Прогресс-бар с градиентом cyan→purple
+- Бегущие строки кода:
+  ```
+  INITIALIZING NEURAL NETWORK...
+  LOADING SHADERS...
+  CALIBRATING DIMENSIONS...
+  ```
+
+**Анимация**:
+- Загрузка прогресс-бара: 3 секунды
+- Появление строк кода с задержкой 0.5s каждая
+- Fade-out прелоадера после завершения
+
+### 2. Custom Cursor (Кастомный курсор)
+
+**Внешний вид**:
+- Основное кольцо: 20px, неоновая обводка 2px (#00F0FF)
+- Следующий элемент: 40px, радиальный градиент с прозрачностью
+- Эффект свечения: box-shadow с blur
+
+**Поведение**:
+- Плавное следование за мышью с lerp (коэффициент 0.15)
+- Увеличение до 40px при наведении на интерактивные элементы
+- Mix-blend-mode: difference для инверсии цвета
+
+**Интерактивные элементы**:
+- Все кнопки, ссылки, .asteroid, .service-node, .project-showcase, .form-input
+
+### 3. 3D Сцена (Three.js)
+
+**Центральный артефакт**:
+- Геометрия: IcosahedronGeometry(1, 1)
+- Материал: ShaderMaterial с GLSL шейдерами
+- Эффекты:
+  - Vertex displacement для "жидкого" эффекта
+  - Fresnel для края объекта
+  - Внутреннее свечение (AdditiveBlending)
+  - Wireframe overlay (прозрачность 0.3)
+
+**Шейдеры**:
+```glsl
+// Vertex Shader
+uniform float time;
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vNormal = normalize(normalMatrix * normal);
+    vPosition = position;
+
+    vec3 newPos = position;
+    float displacement = sin(position.x * 2.0 + time) * 
+                        sin(position.y * 2.0 + time) * 
+                        sin(position.z * 2.0 + time) * 0.1;
+    newPos += normal * displacement;
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+}
+
+// Fragment Shader
+uniform float time;
+uniform vec3 color1; // #00F0FF
+uniform vec3 color2; // #BD00FF
+varying vec3 vNormal;
+varying vec3 vPosition;
+
+void main() {
+    vec3 viewDirection = normalize(cameraPosition - vPosition);
+    float fresnel = dot(viewDirection, vNormal);
+    fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
+    fresnel = pow(fresnel, 2.0);
+
+    vec3 color = mix(color1, color2, fresnel);
+    float glow = sin(time + vPosition.x * 2.0) * 0.5 + 0.5;
+    color += color1 * glow * 0.3;
+
+    gl_FragColor = vec4(color, 0.9);
+}
+```
+
+**Астероиды (навигация)**:
+- 4 объекта: DodecahedronGeometry(0.3, 0)
+- Материал: MeshStandardMaterial (цвет #1a1a2e, roughness 0.8)
+- Внутреннее свечение: сфера с AdditiveBlending
+- Позиции:
+  - HOME: top: 10%, left: 50%
+  - PROJECTS: top: 50%, right: 10%
+  - LABORATORY: bottom: 10%, left: 50%
+  - CONTACT: top: 50%, left: 10%
+
+**Частицы**:
+- 500 частиц в буферной геометрии
+- Цвета: градиент cyan→purple
+- Анимация: медленное вращение и движение по синусоиде
+
+**Освещение**:
+- AmbientLight: 0x404040, интенсивность 0.5
+- DirectionalLight: 0x00F0FF, позиция (5, 5, 5), тени включены
+- PointLight (фиолетовый): 0xBD00FF, позиция (-3, 2, 3)
+- PointLight (зелёный): 0x39FF14, позиция (3, -2, 2)
+
+**Камера**:
+- PerspectiveCamera: FOV 75, near 0.1, far 1000
+- Позиция: z = 5 (изменяется при скролле 2-10)
+- Реагирует на движение мыши (lerp 0.02)
+
+### 4. Навигационные астероиды
+
+**HTML структура**:
+```html
+<nav id="nav-asteroids">
+    <div class="asteroid" data-section="home" data-position="0">
+        <div class="asteroid-core"></div>
+        <div class="asteroid-label">HOME</div>
+    </div>
+    <!-- Повторить для portfolio, services, contact -->
+</nav>
+```
+
+**CSS стили**:
+```css
+.asteroid {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    cursor: pointer;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.asteroid:hover {
+    transform: scale(1.2);
+}
+
+.asteroid-core {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0a0a0a 100%);
+    clip-path: polygon(50% 0%, 80% 10%, 100% 35%, 100% 70%, 80% 90%, 50% 100%, 20% 90%, 0% 70%, 0% 35%, 20% 10%);
+    animation: float-asteroid 6s ease-in-out infinite;
+}
+```
+
+**Анимации**:
+- Появление: elastic.out с задержкой для каждого
+- Парение: float-asteroid (6s, ease-in-out infinite)
+- Ховер: scale 1.2, показ label
+- Магнитный эффект: смещение к курсору на 30%
+
+### 5. Секция HOME (Главная)
+
+**Контент**:
+```html
+<h1 class="hero-title glitch-text" data-text="NEBULA DIGITAL">
+    NEBULA DIGITAL
+</h1>
+<p class="hero-slogan">
+    <span class="slogan-word">МЫ</span>
+    <span class="slogan-word">НЕ</span>
+    <span class="slogan-word">СОЗДАЕМ</span>
+    <span class="slogan-word">САЙТЫ</span>
+</p>
+<p class="hero-slogan second-line">
+    <span class="slogan-word">МЫ</span>
+    <span class="slogan-word">СОЗДАЕМ</span>
+    <span class="slogan-word">ЦИФРОВЫЕ</span>
+    <span class="slogan-word">ВСЕЛЕННЫЕ</span>
+</p>
+```
+
+**Эффекты**:
+- Glitch-эффект на заголовке (случайные срабатывания каждые 3-8 секунд)
+- Появление слов слогана с задержкой (stagger 0.1s)
+- Scroll indicator с пульсирующей линией
+
+### 6. Секция PORTFOLIO (Проекты)
+
+**Структура**:
+```html
+<div class="portfolio-corridor">
+    <div class="project-showcase" data-project="1">
+        <div class="project-3d-container">
+            <div class="project-hologram">
+                <div class="hologram-screen"></div>
+            </div>
+        </div>
+        <div class="project-info">
+            <h3 class="project-name">CYBER FINANCE</h3>
+            <p class="project-desc">Финтех платформа с AI-аналитикой</p>
+            <div class="project-tech">
+                <span class="tech-tag">React</span>
+                <span class="tech-tag">Three.js</span>
+                <span class="tech-tag">AI</span>
+            </div>
+        </div>
+    </div>
+    <!-- Повторить для 2-3 проектов -->
+</div>
+```
+
+**Эффекты**:
+- Голографический экран: вращение 360deg (8s linear infinite)
+- Scanlines overlay на экране
+- Ховер: свечение cyan, подъём на 10px, пробег градиента
+- Горизонтальный скролл с перетаскиванием
+
+### 7. Секция SERVICES (Лаборатория)
+
+**Визуал**:
+- Нейронная сеть/мозг в центре
+- 3 service-node с иконками
+- HUD-интерфейс
+
+**Анимация мозга**:
+```css
+.brain-core {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, #BD00FF 0%, transparent 70%);
+    animation: brain-pulse 3s infinite;
+}
+
+@keyframes brain-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+}
+```
+
+**Service nodes**:
+- При ховере: сдвиг вправо на 20px, свечение purple
+- Подсветка brain-core в соответствующий цвет:
+  - Automation: #00F0FF
+  - Development: #BD00FF
+  - Integration: #39FF14
+
+### 8. Секция CONTACT
+
+**Кнопка START PROJECT**:
+```css
+.liquid-button {
+    padding: 2rem 4rem;
+    border: 2px solid #00F0FF;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.5),
+                0 0 20px rgba(0, 240, 255, 0.3),
+                0 0 30px rgba(0, 240, 255, 0.2);
+}
+
+.liquid-button:hover {
+    background: rgba(0, 240, 255, 0.1);
+    transform: scale(1.05);
+}
+```
+
+**Поведение**:
+- При клике: взрыв частиц, исчезновение кнопки
+- Появление формы с fade-in-up
+- Поля ввода: стиль кода с bracket <NAME/>
+
+**Форма**:
+```html
+<label for="name" class="form-label">
+    <span class="label-bracket">&lt;</span>
+    NAME
+    <span class="label-bracket">/&gt;</span>
+</label>
+<input type="text" id="name" class="form-input">
+```
+
+### 9. HUD кнопки
+
+**Audio Toggle** (top-right):
+- Иконка звука
+- Label "SOUND"
+- Включение/выключение аудио
+
+**Return Button** (bottom-right):
+- Стрелка вверх
+- Label "RETURN"
+- Скрыта на главной, появляется в других разделах
+
+### 10. Продвинутые эффекты
+
+**Glitch эффект**:
+```css
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    text-shadow: -2px 0 #BD00FF; /* before */
+    text-shadow: -2px 0 #00F0FF; /* after */
+    clip: rect(...);
+    animation: glitch-anim 2.5s infinite;
+}
+```
+
+**Noise overlay**:
+```css
+.noise-overlay {
+    background-image: url("data:image/svg+xml,...");
+    opacity: 0.05;
+    pointer-events: none;
+    z-index: 9997;
+}
+```
+
+**Scanlines**:
+```css
+.scanlines {
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    opacity: 0.3;
+    pointer-events: none;
+}
+```
+
+**Chromatic aberration**:
+- Красный сдвиг влево на 2px
+- Синий сдвиг вправо на 2px
+- Прозрачность 0.3
+
+## Анимации (GSAP)
+
+### Preloader timeline
+```javascript
+const tl = gsap.timeline();
+
+tl.from(codeLines, {
+    opacity: 0,
+    stagger: 0.3,
+    duration: 0.5
+}, 0)
+.to(preloader, {
+    opacity: 0,
+    visibility: 'hidden',
+    duration: 0.8,
+    delay: 2.5
+}, 3);
+```
+
+### Section transition
+```javascript
+transitionToSection(sectionId) {
+    const tl = gsap.timeline();
+
+    tl.to(currentSection, {
+        opacity: 0,
+        scale: 1.5,
+        duration: 0.6,
+        ease: "power2.in"
+    }, 0)
+    .call(() => {
+        currentSection.classList.remove('active');
+        targetSection.classList.add('active');
+    }, null, 0.3)
+    .fromTo(targetSection, {
+        opacity: 0,
+        scale: 0.5
+    }, {
+        opacity: 1,
+        scale: 1,
+        duration: 0.8,
+        ease: "power2.out"
+    }, 0.4);
+}
+```
+
+### Particle explosion
+```javascript
+particleExplosion(x, y) {
+    const particleCount = 30;
+    const colors = ['#00F0FF', '#BD00FF', '#39FF14'];
+
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        // ... setup
+        gsap.to(particle, {
+            x: Math.cos(angle) * velocity,
+            y: Math.sin(angle) * velocity,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out"
+        });
+    }
+}
+```
+
+## Интерактивность
+
+### Mouse interaction
+- Центральный артефакт вращается вслед за мышью
+- Частицы разлетаются от курсора
+- Магнитные кнопки притягиваются
+
+### Scroll behavior
+- Колесо мыши: zoom камеры (z: 2-10)
+- Скролл: параллакс астероидов
+- ScrollTrigger: анимация появления элементов
+
+### Keyboard shortcuts
+- H/Home: возврат на главную
+- 1-4: переход к разделам
+- Escape: возврат на главную
+
+## Адаптивность
+
+### Desktop (1920×¹⁰⁸⁰+)
+- Полный 3D опыт
+- Все эффекты включены
+- Горизонтальная навигация
+
+### Tablet (768×¹⁰⁲⁴)
+- Упрощённые шейдеры
+- Меньше частиц
+- Вертикальный стек сервисов
+
+### Mobile (375×¹⁶⁷)
+- Пре-рендерные видео вместо 3D
+- Упрощённая навигация
+- Тач-жесты вместо ховеров
+- Вертикальный layout
+
+## Performance optimization
+
+### Рекомендации
+1. **LOD (Level of Detail)**: уменьшать детализацию на расстоянии
+2. **InstancedMesh**: для рендеринга множества частиц
+3. **Texture compression**: KTX2/Basis формат
+4. **Lazy loading**: загрузка по требованию
+5. **Debounced resize**: оптимизация обработки resize
+
+### Целевые показатели
+- 60 FPS на современных GPU
+- Загрузка < 3 секунд
+- Lighthouse score > 90
+
+## Финальные инструкции для AI
+
+1. Создайте все файлы согласно структуре
+2. Используйте предоставленный код как основу
+3. Добавьте недостающие детали из описания
+4. Протестируйте в современных браузерах
+5. Оптимизируйте для производительности
+6. Убедитесь в адаптивности на всех устройствах
+
+## Ключевые фразы для генерации
+
+- "ultra-futuristic web design"
+- "immersive 3D experience"
+- "cyberpunk aesthetics"
+- "interactive particle system"
+- "custom WebGL shaders"
+- "cinematic GSAP animations"
+- "spatial navigation design"
+- "neon glow effects"
+- "holographic UI elements"
+- "liquid metal 3D object"
+
+---
+
+**РЕЗУЛЬТАТ**: Полностью функциональный, визуально впечатляющий сайт, который выглядит как портал в цифровую вселенную будущего.
